@@ -77,7 +77,7 @@ pub fn load_game(ecs: &mut World) {
     {
         let mut d = (&mut ecs.entities(), &mut ecs.write_storage::<SimpleMarker<SerializeMe>>(), &mut ecs.write_resource::<SimpleMarkerAllocator<SerializeMe>>());
 
-		deserialize_individually!(ecs, de, d, Position, Renderable, Player, Viewshed, Monster, 
+		deserialize_individually!(ecs, de, d, Position, Renderable, Player, Viewshed, Monster,
             Name, BlocksTile, CombatStats, SufferDamage, WantsToMelee, Item, Consumable, Ranged, InflictsDamage, 
             AreaOfEffect, Paralyze, ProvidesHealing, InBackpack, WantsToPickupItem, WantsToUseItem,
             DropItem, SerializationHelper
@@ -86,6 +86,7 @@ pub fn load_game(ecs: &mut World) {
 
     let mut deleteme : Option<Entity> = None;
     {
+		let mut rng = bracket_lib::prelude::RandomNumberGenerator::new();
         let entities = ecs.entities();
         let helper = ecs.read_storage::<SerializationHelper>();
         let player = ecs.read_storage::<Player>();
@@ -95,6 +96,10 @@ pub fn load_game(ecs: &mut World) {
             *worldmap = h.map.clone();
             worldmap.tile_content = vec![Vec::new(); super::map::MAPSIZE_COUNT];
             deleteme = Some(e);
+
+			for t in worldmap.tiles.iter_mut() {
+				t.set_background(&mut rng);
+			}
         }
         for (e,_p,pos) in (&entities, &player, &position).join() {
             let mut ppos = ecs.write_resource::<Point>();
@@ -102,6 +107,8 @@ pub fn load_game(ecs: &mut World) {
             let mut player_resource = ecs.write_resource::<Entity>();
             *player_resource = e;
         }
+
+
     }
     ecs.delete_entity(deleteme.unwrap()).expect("Unable to delete helper");
 }

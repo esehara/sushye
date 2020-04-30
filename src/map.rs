@@ -35,6 +35,31 @@ pub struct Tile {
 	pub background: Option<Color>,
 }
 
+impl Tile {
+	pub fn set_background(&mut self,rng: &mut bracket_lib::prelude::RandomNumberGenerator) {
+		let r = rng.range(0, 3);
+		match self.tiletype {
+			TileType::Wall => { 
+				match r {
+					0 => self.background = Some(Color::new(0.7, 0.2, 0.2, 1.0)),
+					1 => self.background = Some(Color::new(0.8, 0.2, 0.2, 1.0)),
+					2 => self.background = Some(Color::new(0.9, 0.2, 0.2, 1.0)),
+					_ => {},
+				}
+			}
+			TileType::Floor => { 
+				match r {
+					0 => self.background = Some(Color::new(0.1, 0.1, 0.1, 1.0)),
+					1 => self.background = Some(Color::new(0.15, 0.15, 0.15, 1.0)),
+					2 => self.background = Some(Color::new(0.2, 0.2, 0.2, 1.0)),
+					_ => {},
+				}
+			}
+			TileType::DownStairs => {}
+		}
+	}		
+}
+
 #[derive(Default, Serialize, Deserialize, Clone)]
 pub struct Map {
 	pub tiles: Vec<Tile>,
@@ -178,27 +203,8 @@ impl Map {
 	fn set_background(&mut self) {
 		let mut rng = bracket_lib::prelude::RandomNumberGenerator::new();
 		for tile in self.tiles.iter_mut() {
-			let r = rng.range(0, 3);
-			match tile.tiletype {
-				TileType::Wall => { 
-					match r {
-						0 => tile.background = Some(Color::new(0.7, 0.2, 0.2, 1.0)),
-						1 => tile.background = Some(Color::new(0.8, 0.2, 0.2, 1.0)),
-						2 => tile.background = Some(Color::new(0.9, 0.2, 0.2, 1.0)),
-						_ => {},
-					}
-				}
-				TileType::Floor => { 
-					match r {
-						0 => tile.background = Some(Color::new(0.1, 0.1, 0.1, 1.0)),
-						1 => tile.background = Some(Color::new(0.15, 0.15, 0.15, 1.0)),
-						2 => tile.background = Some(Color::new(0.2, 0.2, 0.2, 1.0)),
-						_ => {},
-					}
-				}
-				TileType::DownStairs => {}
-			}
-		}		
+			tile.set_background(&mut rng);
+		}
 	}
 
 
