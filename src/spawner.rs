@@ -4,9 +4,11 @@ use std::collections::HashMap;
 
 use super::{CombatStats, Player, Renderable, Name, MAPSIZE_WIDTH,
 			Consumable, ProvidesHealing, Position, Viewshed, Monster, BlocksTile, SeenPlayer,
-			GameImage, map, Item, Potion, Ranged, InflicsDamage, AreaOfEffect,
+			GameImage, map, Item, Potion, Ranged, InflictsDamage, AreaOfEffect,
 			Paralyze, DurationTurnHeal, Equippable, EquipmentSlot,
-			random_table::RandomTable, map::Rect};
+			random_table::RandomTable, map::Rect, SerializeMe };
+
+use specs::saveload::{MarkedBuilder, SimpleMarker};
 
 const MAX_MONSTERS : i32 = 4;
 const MAX_ITEMS : i32 = 2;
@@ -20,6 +22,7 @@ pub fn player(ecs : &mut World, player_x : i32, player_y : i32) -> Entity {
 			.with(CombatStats { max_hp: 30, hp: 30, defense: 2, power: 5})
 			.with(Name {name: "Player".to_string() })
 			.with(DurationTurnHeal {time: 0})
+			.marked::<SimpleMarker<SerializeMe>>()
 			.build()
 }
 
@@ -54,6 +57,7 @@ fn monster<S : ToString>(ecs: &mut World, x: i32, y: i32, image : GameImage, nam
         .with(CombatStats{ max_hp: 16, hp: hp, defense: defence, power: power})
         .with(DurationTurnHeal {time: 0})
 		.with(SeenPlayer{point: None})
+		.marked::<SimpleMarker<SerializeMe>>()
 		.build();
 }
 
@@ -64,6 +68,7 @@ fn iron_sword(ecs: &mut World, x:i32, y:i32) {
 		.with(Name {name: "Iron Sword".to_string()})
 		.with(Item{})
 		.with(Equippable { slot: EquipmentSlot::Melee })
+		.marked::<SimpleMarker<SerializeMe>>()
 		.build();
 }
 
@@ -74,6 +79,7 @@ fn iron_shild(ecs: &mut World, x:i32, y:i32) {
 		.with(Name {name: "Iron Shild".to_string()})
 		.with(Item{})
 		.with(Equippable {slot: EquipmentSlot::Shield })
+		.marked::<SimpleMarker<SerializeMe>>()
 		.build();
 }
 
@@ -86,6 +92,7 @@ fn health_potion(ecs: &mut World, x: i32, y: i32) {
 		.with(Consumable {})
 		.with(ProvidesHealing {heal_amount: 8})
 		.with(Potion { heal_amount: 8})
+		.marked::<SimpleMarker<SerializeMe>>()
 		.build();
 }
 
@@ -97,7 +104,8 @@ fn magic_missile_scroll(ecs: &mut World, x: i32, y: i32) {
 		.with(Item{})
 		.with(Consumable {})
 		.with(Ranged {range: 6})
-		.with(InflicsDamage { damage: 8})
+		.with(InflictsDamage { damage: 8})
+		.marked::<SimpleMarker<SerializeMe>>()
 		.build();
 }
 
@@ -109,8 +117,9 @@ fn fireball_scroll(ecs: &mut World, x: i32, y: i32) {
 		.with(Item{})
 		.with(Consumable {})
 		.with(Ranged {range: 6})
-		.with(InflicsDamage { damage: 8})
+		.with(InflictsDamage { damage: 8})
 		.with(AreaOfEffect{ radius: 3})
+		.marked::<SimpleMarker<SerializeMe>>()
 		.build();
 }
 
@@ -122,6 +131,7 @@ fn paralyze_scroll(ecs: &mut World, x: i32, y: i32) {
         .with(Item{})
         .with(Paralyze { turns: 3})
         .with(Ranged{ range: 6 })
+		.marked::<SimpleMarker<SerializeMe>>()
         .build();
 }
 

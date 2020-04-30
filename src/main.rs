@@ -1,13 +1,17 @@
 ﻿use gfx::{self, *};
+
 use ggez::mint::Point2;
 use ggez::{conf, graphics, Context, ContextBuilder, GameResult};
 use ggez::event::{self, EventHandler, KeyCode, KeyMods, MouseButton};
 use specs::prelude::*;
+use specs::saveload::{SimpleMarker, SimpleMarkerAllocator};
 use bracket_lib::prelude::RandomNumberGenerator;
 
 use std::env;
 use std::path;
 use std::collections::HashMap;
+
+use serde::{Serialize, Deserialize};
 
 mod spawner;
 mod inventory_system;
@@ -42,6 +46,8 @@ pub use damage_system::*;
 mod turnhealing_system;
 pub use turnhealing_system::*;
 
+mod saveload_system;
+
 mod ui_helper;
 mod imgui_helper;
 
@@ -56,7 +62,7 @@ const PLAYER_WINDOW_HEIGHT : i32 = 19;
 
 const TILESIZE: i32 = 32;
 
-#[derive(PartialEq, Eq, Hash)]
+#[derive(PartialEq, Eq, Hash, Clone, Serialize, Deserialize)]
 pub enum GameImage{
 	Player,
 	Dragon,
@@ -80,7 +86,7 @@ pub enum RunState {
 	AwaitingInput, PreRun, PlayerTurn, MonsterTurn, NextLevel, EndTurn,
 	ShowInventory, ShowDropItem,
 	ShowTargeting {range: i32, item: Entity},
-	MainMenu {state: MainMenuState}
+	SaveGame, MainMenu {state: MainMenuState}
 }
 
 #[derive(PartialEq, Copy, Clone)]
@@ -286,8 +292,15 @@ impl State {
 			ecs: World::new()
 		};
 
+		//
+		// gs.ecs.register
+		//
+
+		gs.ecs.register::<SimpleMarker<SerializeMe>>();
+		gs.ecs.register::<SerializationHelper>();
 		gs.ecs.register::<Position>();
 		gs.ecs.register::<Renderable>();
+		
 		gs.ecs.register::<Player>();
 		gs.ecs.register::<Viewshed>();
 		gs.ecs.register::<Monster>();
@@ -307,7 +320,7 @@ impl State {
 		gs.ecs.register::<Consumable>();
 		gs.ecs.register::<ProvidesHealing>();
 		gs.ecs.register::<Ranged>();
-		gs.ecs.register::<InflicsDamage>();
+		gs.ecs.register::<InflictsDamage>();
 		gs.ecs.register::<AreaOfEffect>();
 		gs.ecs.register::<Paralyze>();
 
@@ -316,6 +329,10 @@ impl State {
 		gs.ecs.register::<WantsToUseItem>();
 
 		gs.ecs.register::<Equippable>();
+
+
+
+		gs.ecs.insert(SimpleMarkerAllocator::<SerializeMe>::new());
 
 		let map : Map = Map::new_map_rooms_and_corridors(1);
 		let (player_x, player_y) = map.rooms[0].center();
@@ -329,6 +346,7 @@ impl State {
 		}
 
 		gs.ecs.insert(map);
+
 		gs.ecs.insert(Point::new(player_x, player_y));
 		gs.ecs.insert(player_entity);
 		gs.ecs.insert(RunState::MainMenu {state: MainMenuState::Waiting } );
@@ -704,6 +722,10 @@ impl EventHandler for State {
 			}
 			RunState::PlayerTurn => {
 				self.run_systems();
+				newrunstate = RunState::SaveGame;
+			}
+			RunState::SaveGame => {
+				saveload_system::save_game(&mut self.ecs);
 				newrunstate = RunState::MonsterTurn;
 			}
 			RunState::MonsterTurn => {

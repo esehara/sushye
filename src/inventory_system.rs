@@ -1,5 +1,5 @@
 use specs::prelude::*;
-use super::{Map, SufferDamage, InflicsDamage, AreaOfEffect,
+use super::{Map, SufferDamage, InflictsDamage, AreaOfEffect,
 WantsToPickupItem, Name, InBackpack, Position, gamelog::GameLog,
 WantsToUseItem, DropItem, ProvidesHealing, Consumable, CombatStats, Paralyze};
 
@@ -44,7 +44,7 @@ impl<'a> System<'a> for ItemUseSystem {
 						ReadStorage<'a, Consumable>,
 						ReadStorage<'a, ProvidesHealing>,
                         WriteStorage<'a, CombatStats>,
-						ReadStorage<'a, InflicsDamage>,
+						ReadStorage<'a, InflictsDamage>,
 						ReadStorage<'a, AreaOfEffect>,
 						WriteStorage<'a, SufferDamage>,
 						WriteStorage<'a, Paralyze>,

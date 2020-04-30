@@ -206,6 +206,7 @@ dependencies = [
  "byteorder",
  "lazy_static",
  "parking_lot 0.10.2",
+ "serde",
 ]
 
 [[package]]
@@ -214,6 +215,7 @@ version = "0.8.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6ec613acfe65a809f03d57e2cc8ab97f9c396ddb9929e784bc19b87dd5ccf358"
 dependencies = [
+ "serde",
  "ultraviolet",
 ]
 
@@ -262,6 +264,7 @@ dependencies = [
  "rand 0.7.3",
  "rand_xorshift 0.2.0",
  "regex",
+ "serde",
 ]
 
 [[package]]
@@ -2376,6 +2379,9 @@ name = "serde"
 version = "1.0.106"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "36df6ac6412072f67cf767ebbde4133a5b2e88e76dc6187fa7104cd16f783399"
+dependencies = [
+ "serde_derive",
+]
 
 [[package]]
 name = "serde_derive"
@@ -2559,6 +2565,7 @@ dependencies = [
  "hibitset",
  "log",
  "rayon",
+ "serde",
  "shred",
  "shrev",
  "tuple_utils",
@@ -2653,6 +2660,8 @@ dependencies = [
  "ggez",
  "imgui",
  "imgui-gfx-renderer",
+ "serde",
+ "serde_json",
  "specs",
  "specs-derive",
 ]

@@ -1,12 +1,14 @@
 ﻿use specs::prelude::*;
 use specs_derive::*;
 use std::cmp:: {max, min};
+use serde::{Serialize, Deserialize};
+
 use super:: {Position, Viewshed, Map, CombatStats, Point, WantsToMelee,
 			Item, GameLog, WantsToPickupItem, WantsToUseItem, DropItem,
 			Name, InBackpack, RunState, TileType,
 			Ranged, MAPSIZE_HEIGHT, MAPSIZE_WIDTH};
 
-#[derive(Component, Debug)]
+#[derive(Component, Debug, Clone, Serialize, Deserialize)]
 pub struct Player {}
 
 pub fn try_move_player(delta_x: i32, delta_y: i32, ecs: &mut World) -> RunState {

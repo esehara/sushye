@@ -105,7 +105,7 @@ impl ImGuiWrapper {
 		Window::new(im_str!("Player"))
 		.flags(WindowFlags::NO_COLLAPSE)
 		.size([ImGuiWrapper::STATES_WINDOW_WIDTH_SIZE - 32.0, ImGuiWrapper::STATES_WINDOW_HEIGHT_SIZE - (32.0 * 4.0)], imgui::Condition::FirstUseEver)
-		.position([((TILESIZE * WINDOWSIZE_WIDTH) as f32) - (ImGuiWrapper::STATES_WINDOW_WIDTH_SIZE + 32.0), 16.0], imgui::Condition::Once)
+		.position([((TILESIZE * WINDOWSIZE_WIDTH) as f32) - (ImGuiWrapper::STATES_WINDOW_WIDTH_SIZE + 64.0), 16.0], imgui::Condition::FirstUseEver)
 		.build(&ui, || {
 			ui.text(format!("HP: {} / {}", stats.hp, stats.max_hp));
 			ProgressBar::new((stats.hp as f32) / (stats.max_hp as f32)).build(&ui);
@@ -150,16 +150,20 @@ impl ImGuiWrapper {
 		.size([300.0, 300.0], imgui::Condition::Always)
         .position([100.0, 100.0], imgui::Condition::Always)
 		.build(&ui, || {
-          ui.text(im_str!("Sushy -- Typical Roguelike!!"));
-          ui.text(im_str!("ようこそ、Sushyeの世界へ！"));
-          ui.separator();
-          if ui.small_button(im_str!("Start")) {
-			*runstate = RunState::MainMenu {state: MainMenuState::NewGame};
-		  }
+			ui.text(im_str!("Sushy -- Typical Roguelike!!"));
+			ui.text(im_str!("ようこそ、Sushyeの世界へ！"));
+			ui.separator();
+			if ui.small_button(im_str!("Start")) {
+				*runstate = RunState::MainMenu {state: MainMenuState::NewGame};
+			}
 
-		  if ui.small_button(im_str!("Quit")) {
-			*runstate = RunState::MainMenu {state: MainMenuState::Quit } ;
-		  }
+			if ui.small_button(im_str!("Load Game")) {
+				println!("TODO!");
+			}
+
+			if ui.small_button(im_str!("Quit")) {
+				*runstate = RunState::MainMenu {state: MainMenuState::Quit } ;
+			}
         });
 	}
 

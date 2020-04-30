@@ -3,6 +3,7 @@ use ggez::graphics::Color;
 use bracket_lib::prelude::*;
 use specs::Entity;
 use super:: {TILESIZE, Position, ui_helper, GameImage};
+use serde::{Serialize, Deserialize};
 
 pub const MAPSIZE_WIDTH: usize = 64;
 pub const MAPSIZE_HEIGHT: usize = 64;
@@ -10,7 +11,7 @@ pub const MAPSIZE_COUNT: usize = MAPSIZE_HEIGHT * MAPSIZE_WIDTH;
 pub	const MIN_ROOMS : i32 = 10;
 pub const TRY_ROOMS : i32 = 3;
 
-#[derive(PartialEq, Copy, Clone)]
+#[derive(PartialEq, Copy, Clone, Serialize, Deserialize)]
 pub enum TileType {
 	Wall, Floor, DownStairs
 }
@@ -25,13 +26,16 @@ impl TileType {
 	}
 }
 
-#[derive(PartialEq, Copy, Clone)]
+#[derive(PartialEq, Copy, Clone, Serialize, Deserialize)]
 pub struct Tile {
 	pub tiletype: TileType,
+
+	#[serde(skip_serializing)]
+	#[serde(skip_deserializing)]
 	pub background: Option<Color>,
 }
 
-#[derive(Clone)]
+#[derive(Default, Serialize, Deserialize, Clone)]
 pub struct Map {
 	pub tiles: Vec<Tile>,
 	pub revealed_tiles: Vec<bool>,
@@ -43,6 +47,8 @@ pub struct Map {
 	pub height: i32,
 	pub depth: i32,
 
+	#[serde(skip_serializing)]
+	#[serde(skip_deserializing)]
 	pub tile_content: Vec<Vec<Entity>>,
 }
 
@@ -53,7 +59,7 @@ impl Algorithm2D for Map {
 	}
 }
 
-#[derive(Clone)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct Rect {
     pub x1 : i32,
     pub x2 : i32,
