@@ -706,7 +706,9 @@ impl EventHandler for State {
 						::std::process::exit(0);
 					},
 					MainMenuState::LoadGame => {
-						//TODO
+						saveload_system::load_game(&mut self.ecs);
+						newrunstate = RunState::AwaitingInput;
+						saveload_system::delete_save();
 					},
 					MainMenuState::Waiting => {}
 				}

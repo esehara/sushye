@@ -13,6 +13,7 @@ use imgui_gfx_renderer::*;
 
 use specs::prelude::*;
 use std::time::Instant;
+use std::path::Path;
 
 #[derive(Copy, Clone, PartialEq, Debug, Default)]
 struct MouseState {
@@ -23,6 +24,7 @@ struct MouseState {
 
 pub struct ImGuiWrapper {
   pub imgui: imgui::Context,
+  pub has_save: bool,
   pub renderer: Renderer<gfx_core::format::Rgba8, gfx_device_gl::Resources>,
   last_frame: Instant,
   mouse_state: MouseState,
@@ -65,11 +67,12 @@ impl ImGuiWrapper {
 
     // Renderer
     let renderer = Renderer::init(&mut imgui, &mut *factory, shaders).unwrap();
-
+	let has_save = Path::new("./savegame.json").exists();
 
     // Create instace
     Self {
       imgui,
+	  has_save,
       renderer,
       last_frame: Instant::now(),
       mouse_state: MouseState::default(),
@@ -142,6 +145,11 @@ impl ImGuiWrapper {
 	self.initialize_for_draw(ctx, hidpi_factor);
 	let mut runstate = ecs.fetch_mut::<RunState>();
 	let ui = self.imgui.frame();
+	let has_save;
+	{
+		has_save = self.has_save.clone();
+	}
+
     {
 
       // Window
@@ -156,9 +164,12 @@ impl ImGuiWrapper {
 			if ui.small_button(im_str!("Start")) {
 				*runstate = RunState::MainMenu {state: MainMenuState::NewGame};
 			}
-
-			if ui.small_button(im_str!("Load Game")) {
-				println!("TODO!");
+			if has_save {
+				if ui.small_button(im_str!("Load Game")) {
+					if Path::new("./savegame.json").exists() {
+						*runstate = RunState::MainMenu {state: MainMenuState::LoadGame};
+					}
+				}
 			}
 
 			if ui.small_button(im_str!("Quit")) {
