@@ -70,10 +70,10 @@ fn iron_sword(ecs: &mut World, x:i32, y:i32) {
 fn iron_shild(ecs: &mut World, x:i32, y:i32) {
 	ecs.create_entity()
 		.with(Position{x: x, y: y})
-		.with(Renderable { image: GameImage::Shild, render_layer: 1, background: None})
+		.with(Renderable { image: GameImage::Shield, render_layer: 1, background: None})
 		.with(Name {name: "Iron Shild".to_string()})
 		.with(Item{})
-		.with(Equippable {slot: EquipmentSlot::Shild })
+		.with(Equippable {slot: EquipmentSlot::Shield })
 		.build();
 }
 

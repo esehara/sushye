@@ -40,40 +40,6 @@ pub fn draw_tile_text(ctx: &mut Context, textf: graphics::TextFragment, x: i32, 
 	).expect("Cannot draw Text");
 }
 
-pub fn draw_health_bar(ctx: &mut Context, stats: &CombatStats){
-	let window_x = map_to_p(35);
-	let window_y = map_to_p(1);
-	let health_bar_width = map_to_p(4);
-
-	let rect = Rect::new(
-		window_x - 16.0, window_y + 16.0,
-		health_bar_width, map_to_p(1) - 16.0);
-	let r2 = Mesh::new_rectangle(
-			ctx,
-			DrawMode::fill(),
-			rect,
-			Color::new(0.7, 0.7, 0.7, 1.0))
-		.unwrap();
-	graphics::draw(ctx, &r2, graphics::DrawParam::default())
-		.expect("Cannot draw health bar");
-
-	let helth_per = stats.hp as f32 / stats.max_hp as f32;
-	let hp_helth_rect = health_bar_width * helth_per;
-
-	let rect = Rect::new(
-		window_x + (health_bar_width - hp_helth_rect) - 16.0, window_y + 16.0,
-		hp_helth_rect, map_to_p(1) - 16.0);
-
-	let r2 = Mesh::new_rectangle(
-			ctx,
-			DrawMode::fill(),
-			rect,
-			Color::new(1.0, 0.0, 0.0, 1.0))
-		.unwrap();
-	graphics::draw(ctx, &r2, graphics::DrawParam::default()).expect("");
-}
-
-
 pub fn draw_message_window(ctx: &mut Context, ecs: &World, font: Font) {
 	let log = ecs.fetch::<gamelog::GameLog>();
 
@@ -126,34 +92,6 @@ pub fn draw_message_window(ctx: &mut Context, ecs: &World, font: Font) {
 	}
 }
 
-pub fn draw_status_window(ctx: &mut Context, ecs: &World, font: Font) {
-	let window_x = map_to_p(30);
-	let window_y = map_to_p(1);
-
-	let rect = Rect::new(
-		map_to_p(30), map_to_p(1),
-		map_to_p(9), map_to_p(5));
-
-	let r2 = Mesh::new_rectangle(
-				ctx,
-				DrawMode::fill(),
-				rect,
-				Color::new(0.2, 0.2, 0.2, 0.8))
-			.unwrap();
-
-	graphics::draw(ctx, &r2, graphics::DrawParam::default())
-		.expect("Cannot draw window.");
-	let combat_stats = ecs.read_storage::<CombatStats>();
-	let players = ecs.read_storage::<Player>();
-	for(_player, stats) in (&players, &combat_stats).join() {
-		draw_health_bar(ctx, stats);
-		let hp_text = vec![
-			graphics::TextFragment::new(format!("体力: {} / {}", stats.hp, stats.max_hp))];
-		draw_text(ctx, 
-			&hp_text,
-			Point2{x: window_x + 16.0, y: window_y + 16.0}, font);
-	}
-}
 
 pub fn draw_inventory_window(state: &State, ctx: &mut Context, ecs: &World, font: Font, mouse_pos: Point2<f32>, render_mode: &RenderMode) {
 	let player_entity = ecs.fetch::<Entity>();

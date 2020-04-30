@@ -156,7 +156,7 @@ pub struct Paralyze {
 }
 
 #[derive(PartialEq, Copy, Clone)]
-pub enum EquipmentSlot {Melee, Shild}
+pub enum EquipmentSlot {Melee, Shield}
 
 #[derive(Component, Clone)]
 pub struct  Equippable {

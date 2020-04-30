@@ -1,4 +1,8 @@
-﻿use ggez::graphics;
+﻿use super:: {
+	CombatStats, Player,
+	RunState, TILESIZE, WINDOWSIZE_WIDTH, WINDOWSIZE_HEIGHT} ;
+
+use ggez::graphics;
 use ggez::Context;
 
 use gfx_core::{handle::RenderTargetView, memory::Typed};
@@ -7,6 +11,7 @@ use gfx_device_gl;
 use imgui::*;
 use imgui_gfx_renderer::*;
 
+use specs::prelude::*;
 use std::time::Instant;
 
 #[derive(Copy, Clone, PartialEq, Debug, Default)]
@@ -73,11 +78,8 @@ impl ImGuiWrapper {
     }
   }
 
-  pub fn render(&mut self, ctx: &mut Context, hidpi_factor: f32) {
-    // Update mouse
-    self.update_mouse();
-
-    // Create new frame
+  fn initialize_for_draw(&mut self, ctx: &mut Context, hidpi_factor: f32) {
+	self.update_mouse();
     let now = Instant::now();
     let delta = now - self.last_frame;
     let delta_s = delta.as_secs() as f32 + delta.subsec_nanos() as f32 / 1_000_000_000.0;
@@ -87,9 +89,47 @@ impl ImGuiWrapper {
     self.imgui.io_mut().display_size = [draw_width, draw_height];
     self.imgui.io_mut().display_framebuffer_scale = [hidpi_factor, hidpi_factor];
     self.imgui.io_mut().delta_time = delta_s;
+  }
 
+  const STATES_WINDOW_WIDTH_SIZE: f32 = (TILESIZE * 8) as f32;
+  const STATES_WINDOW_HEIGHT_SIZE: f32 = (TILESIZE * WINDOWSIZE_HEIGHT) as f32;
+
+  pub fn states_window(&mut self, ctx: &mut Context, ecs: &World, hidpi_factor: f32) {
+	let combat_stats = ecs.read_storage::<CombatStats>();
+	let players = ecs.read_storage::<Player>();
+
+	self.initialize_for_draw(ctx, hidpi_factor);
 	let ui = self.imgui.frame();
-    // Various ui things
+	for (_player, stats) in (&players, &combat_stats).join() {
+		// Window
+		Window::new(im_str!("Player"))
+		.flags(WindowFlags::NO_COLLAPSE|WindowFlags::NO_RESIZE)
+		.size([ImGuiWrapper::STATES_WINDOW_WIDTH_SIZE - 32.0, ImGuiWrapper::STATES_WINDOW_HEIGHT_SIZE - (32.0 * 4.0)], imgui::Condition::Once)
+		.position([((TILESIZE * WINDOWSIZE_WIDTH) as f32) - (ImGuiWrapper::STATES_WINDOW_WIDTH_SIZE + 32.0), 16.0], imgui::Condition::Once)
+		.build(&ui, || {
+			ui.text(format!("HP: {} / {}", stats.hp, stats.max_hp));
+			ProgressBar::new((stats.hp as f32) / (stats.max_hp as f32)).build(&ui);
+		});
+	}
+
+    // Render
+    let (factory, _, encoder, _, render_target) = graphics::gfx_objects(ctx);
+    let draw_data = ui.render();
+    self
+      .renderer
+      .render(
+        &mut *factory,
+        encoder,
+        &mut RenderTargetView::new(render_target.clone()),
+        draw_data,
+      )
+      .unwrap();
+  }
+
+  pub fn render(&mut self, ctx: &mut Context, ecs: &World, hidpi_factor: f32) {
+	self.initialize_for_draw(ctx, hidpi_factor);
+	let mut runstate = ecs.fetch_mut::<RunState>();
+	let ui = self.imgui.frame();
     {
 
       // Window
@@ -98,13 +138,16 @@ impl ImGuiWrapper {
 		.size([300.0, 300.0], imgui::Condition::Always)
         .position([100.0, 100.0], imgui::Condition::Always)
 		.build(&ui, || {
-          ui.text(im_str!("Hello world!"));
-          ui.text(im_str!("こんにちは世界！"));
+          ui.text(im_str!("Sushy -- Typical Roguelike!!"));
+          ui.text(im_str!("ようこそ、Sushyeの世界へ！"));
           ui.separator();
-
           if ui.small_button(im_str!("Start")) {
-            println!("Small button clicked");
-          }
+			*runstate = RunState::PreRun;
+		  }
+
+		  if ui.small_button(im_str!("Quit")) {
+			*runstate = RunState::Quit;
+		  }
         });
 	}
 

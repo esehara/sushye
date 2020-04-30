@@ -67,7 +67,7 @@ pub enum GameImage{
 	Floor,
 	DownStairs,
 	Sword,
-	Shild,
+	Shield,
 }
 
 #[derive(PartialEq, Copy, Clone)]
@@ -75,7 +75,7 @@ pub enum RunState {
 	AwaitingInput, PreRun, PlayerTurn, MonsterTurn, NextLevel, EndTurn,
 	ShowInventory, ShowDropItem,
 	ShowTargeting {range: i32, item: Entity},
-	Title
+	Title, Quit
 }
 
 #[derive(PartialEq, Copy, Clone)]
@@ -255,6 +255,8 @@ impl State {
 		prepare_images.insert(GameImage::DownStairs, graphics::Image::new(ctx, "/downstairs.png").unwrap());
 		prepare_images.insert(GameImage::Potion, graphics::Image::new(ctx, "/potion.png").unwrap());
 		prepare_images.insert(GameImage::Scroll, graphics::Image::new(ctx, "/scroll.png").unwrap());
+		prepare_images.insert(GameImage::Sword, graphics::Image::new(ctx, "/sword.png").unwrap());
+		prepare_images.insert(GameImage::Shield, graphics::Image::new(ctx, "/shield.png").unwrap());
 
 		// Initialize => imgui
 		let imgui = imgui_helper::ImGuiWrapper::new(ctx);
@@ -441,7 +443,7 @@ impl State {
 	}
 
 	fn draw_title(&mut self, ctx: &mut Context) {
-		self.imgui.render(ctx, self.hidpi_factor);
+		self.imgui.render(ctx, &self.ecs, self.hidpi_factor);
 	}
 
 	fn draw_maingame(&mut self, ctx: &mut Context, runstatus: RunState) {
@@ -504,7 +506,7 @@ impl State {
 		ui_helper::draw_mouse_pos(ctx, self.mouse_x, self.mouse_y);
 		// UI
 		ui_helper::draw_message_window(ctx, &self.ecs, self.font);
-		ui_helper::draw_status_window(ctx, &self.ecs, self.font);
+		self.imgui.states_window(ctx, &self.ecs, self.hidpi_factor);
 		match runstatus {
 			RunState::ShowInventory =>
 				ui_helper::draw_inventory_window(
@@ -695,6 +697,9 @@ impl EventHandler for State {
 			RunState::ShowInventory => {}
 			RunState::ShowDropItem => {}
 			RunState::ShowTargeting{range, item} => {
+			}
+			RunState::Quit => {
+				::std::process::exit(0);
 			}
 		}
 
