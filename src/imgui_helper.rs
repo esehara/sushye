@@ -1,6 +1,6 @@
 ﻿use super:: {
 	CombatStats, Player,
-	RunState, TILESIZE, WINDOWSIZE_WIDTH, WINDOWSIZE_HEIGHT} ;
+	RunState, MainMenuState, TILESIZE, WINDOWSIZE_WIDTH, WINDOWSIZE_HEIGHT} ;
 
 use ggez::graphics;
 use ggez::Context;
@@ -64,7 +64,7 @@ impl ImGuiWrapper {
     };
 
     // Renderer
-    let mut renderer = Renderer::init(&mut imgui, &mut *factory, shaders).unwrap();
+    let renderer = Renderer::init(&mut imgui, &mut *factory, shaders).unwrap();
 
 
     // Create instace
@@ -103,12 +103,24 @@ impl ImGuiWrapper {
 	for (_player, stats) in (&players, &combat_stats).join() {
 		// Window
 		Window::new(im_str!("Player"))
-		.flags(WindowFlags::NO_COLLAPSE|WindowFlags::NO_RESIZE)
-		.size([ImGuiWrapper::STATES_WINDOW_WIDTH_SIZE - 32.0, ImGuiWrapper::STATES_WINDOW_HEIGHT_SIZE - (32.0 * 4.0)], imgui::Condition::Once)
+		.flags(WindowFlags::NO_COLLAPSE)
+		.size([ImGuiWrapper::STATES_WINDOW_WIDTH_SIZE - 32.0, ImGuiWrapper::STATES_WINDOW_HEIGHT_SIZE - (32.0 * 4.0)], imgui::Condition::FirstUseEver)
 		.position([((TILESIZE * WINDOWSIZE_WIDTH) as f32) - (ImGuiWrapper::STATES_WINDOW_WIDTH_SIZE + 32.0), 16.0], imgui::Condition::Once)
 		.build(&ui, || {
 			ui.text(format!("HP: {} / {}", stats.hp, stats.max_hp));
 			ProgressBar::new((stats.hp as f32) / (stats.max_hp as f32)).build(&ui);
+			ui.spacing();
+			if CollapsingHeader::new(&ui, im_str!("Equipment"))
+				.open_on_arrow(true).default_open(true).build() {
+				
+				ui.text("Weapon:");
+				ui.same_line(0.0);
+				ui.text_colored([0.0, 1.0, 1.0, 1.0], "None");				
+				
+				ui.text("Shield:");
+				ui.same_line(0.0);
+				ui.text_colored([0.0, 1.0, 1.0, 1.0], "None");
+			};
 		});
 	}
 
@@ -142,11 +154,11 @@ impl ImGuiWrapper {
           ui.text(im_str!("ようこそ、Sushyeの世界へ！"));
           ui.separator();
           if ui.small_button(im_str!("Start")) {
-			*runstate = RunState::PreRun;
+			*runstate = RunState::MainMenu {state: MainMenuState::NewGame};
 		  }
 
 		  if ui.small_button(im_str!("Quit")) {
-			*runstate = RunState::Quit;
+			*runstate = RunState::MainMenu {state: MainMenuState::Quit } ;
 		  }
         });
 	}

@@ -71,11 +71,16 @@ pub enum GameImage{
 }
 
 #[derive(PartialEq, Copy, Clone)]
+pub enum MainMenuState {
+	Waiting, NewGame, LoadGame, Quit
+}
+
+#[derive(PartialEq, Copy, Clone)]
 pub enum RunState {
 	AwaitingInput, PreRun, PlayerTurn, MonsterTurn, NextLevel, EndTurn,
 	ShowInventory, ShowDropItem,
 	ShowTargeting {range: i32, item: Entity},
-	Title, Quit
+	MainMenu {state: MainMenuState}
 }
 
 #[derive(PartialEq, Copy, Clone)]
@@ -237,6 +242,10 @@ impl State {
 				.color(graphics::Color::new(0.0, 0.5, 1.0, 1.0)),
 			GameImage::Scroll => graphics::TextFragment::new("紙")
 				.color(graphics::Color::new(1.0, 0.9, 0.7, 1.0)),
+			GameImage::Sword => graphics::TextFragment::new("剣")
+				.color(graphics::Color::new(0.5, 0.5, 0.0, 1.0)),
+			GameImage::Shield => graphics::TextFragment::new("盾")
+				.color(graphics::Color::new(0.0, 0.0, 0.8, 1.0)),
 			_ => graphics::TextFragment::new("謎")
 				.color(graphics::Color::new(1.0, 1.0, 1.0, 1.0))
 		}
@@ -322,7 +331,7 @@ impl State {
 		gs.ecs.insert(map);
 		gs.ecs.insert(Point::new(player_x, player_y));
 		gs.ecs.insert(player_entity);
-		gs.ecs.insert(RunState::Title);
+		gs.ecs.insert(RunState::MainMenu {state: MainMenuState::Waiting } );
 		gs.ecs.insert(gamelog::GameLog{
 			entries: vec![
 				vec![
@@ -669,8 +678,20 @@ impl EventHandler for State {
 		}
 
 		match newrunstate {
-			RunState::Title => {
-			
+			RunState::MainMenu { state } => {
+				match state {
+					MainMenuState::NewGame => {
+						//TODO: initialize game function
+						newrunstate = RunState::PreRun;
+					},
+					MainMenuState::Quit => {
+						::std::process::exit(0);
+					},
+					MainMenuState::LoadGame => {
+						//TODO
+					},
+					MainMenuState::Waiting => {}
+				}
 			}
 			RunState::PreRun => {
 				self.run_systems();
@@ -698,9 +719,6 @@ impl EventHandler for State {
 			RunState::ShowDropItem => {}
 			RunState::ShowTargeting{range, item} => {
 			}
-			RunState::Quit => {
-				::std::process::exit(0);
-			}
 		}
 
 		{
@@ -714,7 +732,7 @@ impl EventHandler for State {
         graphics::clear(ctx, graphics::BLACK);
 		let runstatus = *(self.ecs.fetch::<RunState>()).clone();
 		match runstatus {
-			RunState::Title => {
+			RunState::MainMenu { state } => {
 				self.draw_title(ctx);
 			}
 			_ => {
