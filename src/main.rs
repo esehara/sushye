@@ -550,6 +550,11 @@ impl State {
 
 impl EventHandler for State {
 
+	fn quit_event(&mut self, ctx: &mut Context) -> bool{
+		saveload_system::save_game(&mut self.ecs);
+		false
+	}
+
 	fn key_down_event (&mut self, _ctx: &mut Context, keycode: KeyCode, keymod: KeyMods, _repeat: bool) {
 	
 		let mut newrunstate;
@@ -727,7 +732,7 @@ impl EventHandler for State {
 				newrunstate = RunState::SaveGame;
 			}
 			RunState::SaveGame => {
-				saveload_system::save_game(&mut self.ecs);
+				// It's currently impossible to save every turn.
 				newrunstate = RunState::MonsterTurn;
 			}
 			RunState::MonsterTurn => {
