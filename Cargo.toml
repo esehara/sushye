@@ -1,0 +1,17 @@
+﻿[package]
+name = "sushye"
+version = "0.0.1"
+authors = ["esehara shigeo"]
+edition = "2018"
+
+[dependencies]
+cgmath = "0.17.0"
+ggez = "0.5.1"
+bracket-lib = "0.8.0"
+specs = "0.16.1"
+specs-derive = "0.4.0"
+gfx = "0.18.2"
+gfx_core = "0.9.2"
+gfx_device_gl = "0.16.2"
+imgui = "0.3.0"
+imgui-gfx-renderer = "0.3.0"
