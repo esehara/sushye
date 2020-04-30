@@ -33,7 +33,11 @@ impl ImGuiWrapper {
 	let unicode_font = imgui.fonts().add_font(&[FontSource::TtfData {
 		data: include_bytes!("../resources/unifont-13.ttf"),
 		size_pixels: 16.0,
-		config: None,
+		config: Some(FontConfig {
+			rasterizer_multiply: 1.75,
+			glyph_ranges : FontGlyphRanges::japanese(),
+			..FontConfig::default()
+		}),
 	}]);
 
     // Shaders
