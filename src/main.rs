@@ -675,7 +675,10 @@ impl EventHandler for State {
                 match keymod {
                     KeyMods::NONE => {
                         match keycode {
-                            KeyCode::Escape => newrunstate = RunState::AwaitingInput,
+                            KeyCode::Escape => {
+                                self.imgui.inventory_window_show = false;
+                                newrunstate = RunState::AwaitingInput
+                            }
                             _ => {
                                 // keycode  "a" -> 10
                                 newrunstate = try_use_item(
@@ -693,7 +696,10 @@ impl EventHandler for State {
                 match keymod {
                     KeyMods::NONE => {
                         match keycode {
-                            KeyCode::Escape => newrunstate = RunState::AwaitingInput,
+                            KeyCode::Escape => {
+                                self.imgui.inventory_window_show = false;
+                                newrunstate = RunState::AwaitingInput
+                            }
                             _ => {
                                 // keycode  "a" -> 10
                                 newrunstate = try_drop_item(
