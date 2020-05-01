@@ -1,10 +1,12 @@
-﻿use specs::prelude::*;
-use specs::saveload::{SimpleMarker, SimpleMarkerAllocator, SerializeComponents, DeserializeComponents, MarkedBuilder};
-use specs::error::NoError;
 use super::*;
+use specs::error::NoError;
+use specs::prelude::*;
+use specs::saveload::{
+    DeserializeComponents, MarkedBuilder, SerializeComponents, SimpleMarker, SimpleMarkerAllocator,
+};
+use std::fs;
 use std::fs::File;
 use std::path::Path;
-use std::fs;
 
 macro_rules! serialize_individually {
     ($ecs:expr, $ser:expr, $data:expr, $( $type:ty),*) => {
@@ -34,25 +36,52 @@ macro_rules! deserialize_individually {
         )*
     };
 }
-pub fn save_game(ecs : &mut World) {
+pub fn save_game(ecs: &mut World) {
     // Create helper
     let mapcopy = ecs.get_mut::<super::map::Map>().unwrap().clone();
     let savehelper = ecs
         .create_entity()
-        .with(SerializationHelper{ map : mapcopy })
+        .with(SerializationHelper { map: mapcopy })
         .marked::<SimpleMarker<SerializeMe>>()
         .build();
 
     // Actually serialize
     {
-        let data = ( ecs.entities(), ecs.read_storage::<SimpleMarker<SerializeMe>>() );
+        let data = (
+            ecs.entities(),
+            ecs.read_storage::<SimpleMarker<SerializeMe>>(),
+        );
 
-		let writer = File::create("./savegame.json").unwrap();
-		let mut serializer = serde_json::Serializer::new(writer);
-        serialize_individually!(ecs, serializer, data, Position, Renderable, Player, Viewshed, Monster, 
-            Name, BlocksTile, CombatStats, SufferDamage, WantsToMelee, Item, Paralyze, Ranged, InflictsDamage, 
-            AreaOfEffect, Paralyze, ProvidesHealing, InBackpack, WantsToPickupItem, WantsToUseItem,
-			DropItem, SerializationHelper, Equippable);
+        let writer = File::create("./savegame.json").unwrap();
+        let mut serializer = serde_json::Serializer::new(writer);
+        serialize_individually!(
+            ecs,
+            serializer,
+            data,
+            Position,
+            Renderable,
+            Player,
+            Viewshed,
+            Monster,
+            Name,
+            BlocksTile,
+            CombatStats,
+            SufferDamage,
+            WantsToMelee,
+            Item,
+            Paralyze,
+            Ranged,
+            InflictsDamage,
+            AreaOfEffect,
+            Paralyze,
+            ProvidesHealing,
+            InBackpack,
+            WantsToPickupItem,
+            WantsToUseItem,
+            DropItem,
+            SerializationHelper,
+            Equippable
+        );
     }
 
     // Clean up
@@ -75,44 +104,72 @@ pub fn load_game(ecs: &mut World) {
     let mut de = serde_json::Deserializer::from_str(&data);
 
     {
-        let mut d = (&mut ecs.entities(), &mut ecs.write_storage::<SimpleMarker<SerializeMe>>(), &mut ecs.write_resource::<SimpleMarkerAllocator<SerializeMe>>());
+        let mut d = (
+            &mut ecs.entities(),
+            &mut ecs.write_storage::<SimpleMarker<SerializeMe>>(),
+            &mut ecs.write_resource::<SimpleMarkerAllocator<SerializeMe>>(),
+        );
 
-		deserialize_individually!(ecs, de, d, Position, Renderable, Player, Viewshed, Monster,
-            Name, BlocksTile, CombatStats, SufferDamage, WantsToMelee, Item, Consumable, Ranged, InflictsDamage, 
-            AreaOfEffect, Paralyze, ProvidesHealing, InBackpack, WantsToPickupItem, WantsToUseItem,
-            DropItem, SerializationHelper, Equippable
+        deserialize_individually!(
+            ecs,
+            de,
+            d,
+            Position,
+            Renderable,
+            Player,
+            Viewshed,
+            Monster,
+            Name,
+            BlocksTile,
+            CombatStats,
+            SufferDamage,
+            WantsToMelee,
+            Item,
+            Consumable,
+            Ranged,
+            InflictsDamage,
+            AreaOfEffect,
+            Paralyze,
+            ProvidesHealing,
+            InBackpack,
+            WantsToPickupItem,
+            WantsToUseItem,
+            DropItem,
+            SerializationHelper,
+            Equippable
         );
     }
 
-    let mut deleteme : Option<Entity> = None;
+    let mut deleteme: Option<Entity> = None;
     {
-		let mut rng = bracket_lib::prelude::RandomNumberGenerator::new();
+        let mut rng = bracket_lib::prelude::RandomNumberGenerator::new();
         let entities = ecs.entities();
         let helper = ecs.read_storage::<SerializationHelper>();
         let player = ecs.read_storage::<Player>();
         let position = ecs.read_storage::<Position>();
-        for (e,h) in (&entities, &helper).join() {
+        for (e, h) in (&entities, &helper).join() {
             let mut worldmap = ecs.write_resource::<super::map::Map>();
             *worldmap = h.map.clone();
             worldmap.tile_content = vec![Vec::new(); super::map::MAPSIZE_COUNT];
             deleteme = Some(e);
 
-			for t in worldmap.tiles.iter_mut() {
-				t.set_background(&mut rng);
-			}
+            for t in worldmap.tiles.iter_mut() {
+                t.set_background(&mut rng);
+            }
         }
-        for (e,_p,pos) in (&entities, &player, &position).join() {
+        for (e, _p, pos) in (&entities, &player, &position).join() {
             let mut ppos = ecs.write_resource::<Point>();
             *ppos = Point::new(pos.x, pos.y);
             let mut player_resource = ecs.write_resource::<Entity>();
             *player_resource = e;
         }
-
-
     }
-    ecs.delete_entity(deleteme.unwrap()).expect("Unable to delete helper");
+    ecs.delete_entity(deleteme.unwrap())
+        .expect("Unable to delete helper");
 }
 
 pub fn delete_save() {
-    if Path::new("./savegame.json").exists() { std::fs::remove_file("./savegame.json").expect("Unable to delete file"); } 
+    if Path::new("./savegame.json").exists() {
+        std::fs::remove_file("./savegame.json").expect("Unable to delete file");
+    }
 }
