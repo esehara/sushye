@@ -95,7 +95,8 @@ pub fn get_item(ecs: &mut World) -> RunState {
 	RunState::PlayerTurn
 }
 
-pub fn try_use_item(ecs: &mut World, keynum: i32) -> RunState {
+pub fn try_use_item(ecs: &mut World, keynum: i32, inventory_window_show: &mut bool) -> RunState {
+	*inventory_window_show = false;
 	let player_entity = ecs.fetch::<Entity>();
 	let names = ecs.read_storage::<Name>();
 	let backpack = ecs.read_storage::<InBackpack>();
@@ -128,7 +129,8 @@ pub fn try_use_item(ecs: &mut World, keynum: i32) -> RunState {
 	RunState::AwaitingInput
 }
 
-pub fn try_drop_item(ecs: &mut World, keynum: i32) -> RunState {
+pub fn try_drop_item(ecs: &mut World, keynum: i32, inventory_window_show: &mut bool) -> RunState {
+	*inventory_window_show = false;
 	let player_entity = ecs.fetch::<Entity>();
 	let names = ecs.read_storage::<Name>();
 	let backpack = ecs.read_storage::<InBackpack>();

@@ -143,8 +143,8 @@ pub struct State {
 
 	images: HashMap<GameImage, graphics::Image>,
 	imgui: imgui_helper::ImGuiWrapper,
+	
 	hidpi_factor: f32,
-
 	render_mode: RenderMode,
 
 	pub ecs: World
@@ -273,9 +273,6 @@ impl State {
 		prepare_images.insert(GameImage::Sword, graphics::Image::new(ctx, "/sword.png").unwrap());
 		prepare_images.insert(GameImage::Shield, graphics::Image::new(ctx, "/shield.png").unwrap());
 
-		// Initialize => imgui
-		let imgui = imgui_helper::ImGuiWrapper::new(ctx);
-
 		// Create State
         let mut gs = State {		
 
@@ -284,7 +281,7 @@ impl State {
 			mouse_y: 0.0,
 
 			images: prepare_images,
-			imgui: imgui,
+			imgui: imgui_helper::ImGuiWrapper::new(ctx),
 			hidpi_factor: hidpi_factor,
 
 			render_mode: RenderMode::Tile,
@@ -533,16 +530,7 @@ impl State {
 		ui_helper::draw_mouse_pos(ctx, self.mouse_x, self.mouse_y);
 		// UI
 		ui_helper::draw_message_window(ctx, &self.ecs, self.font);
-		self.imgui.states_window(ctx, &self.ecs, self.hidpi_factor);
-		match runstatus {
-			RunState::ShowInventory =>
-				ui_helper::draw_inventory_window(
-					&self, ctx, &self.ecs, self.font, Point2 {x: self.mouse_x, y: self.mouse_y}, &self.render_mode),
-			RunState::ShowDropItem =>
-				ui_helper::draw_inventory_window(
-					&self, ctx, &self.ecs, self.font, Point2 {x: self.mouse_x, y: self.mouse_y}, &self.render_mode),
-			_ => {}
-		}
+		self.imgui.render(ctx, &self.ecs, self.hidpi_factor);
 	}
 }
 
@@ -570,7 +558,7 @@ impl EventHandler for State {
 							KeyCode::Escape => newrunstate = RunState::AwaitingInput,
 							_ =>{ 
 								// keycode  "a" -> 10
-								newrunstate = try_use_item(&mut self.ecs, (keycode as i32) - 10);
+								newrunstate = try_use_item(&mut self.ecs, (keycode as i32) - 10, &mut self.imgui.inventory_window_show);
 							}
 						}
 					},
@@ -584,7 +572,7 @@ impl EventHandler for State {
 							KeyCode::Escape => newrunstate = RunState::AwaitingInput,
 							_ =>{ 
 								// keycode  "a" -> 10
-								newrunstate = try_drop_item(&mut self.ecs, (keycode as i32) - 10);
+								newrunstate = try_drop_item(&mut self.ecs, (keycode as i32) - 10, &mut self.imgui.inventory_window_show);
 							}
 						}
 					},
@@ -625,10 +613,16 @@ impl EventHandler for State {
 							KeyCode::Right => newrunstate = try_move_player(1, 0, &mut self.ecs),
 							KeyCode::Up    => newrunstate = try_move_player(0, -1, &mut self.ecs),
 							KeyCode::Down  => newrunstate = try_move_player(0, 1, &mut self.ecs),
-							KeyCode::D     => newrunstate = RunState::ShowDropItem,
+							KeyCode::D     => {
+								self.imgui.inventory_window_show = true;
+								newrunstate = RunState::ShowDropItem;
+							},
 							KeyCode::G     => newrunstate = get_item(&mut self.ecs),
-							KeyCode::I     => newrunstate = RunState::ShowInventory,
-							KeyCode::S     => newrunstate = RunState::PlayerTurn,
+							KeyCode::I     => {
+								self.imgui.inventory_window_show = true;
+								newrunstate = RunState::ShowInventory;
+							},
+							KeyCode::Comma     => newrunstate = RunState::PlayerTurn,
 							KeyCode::F11   => {
 								if self.render_mode == RenderMode::Tile {
 									self.render_mode = RenderMode::Unicode;

@@ -52,7 +52,7 @@ pub fn save_game(ecs : &mut World) {
         serialize_individually!(ecs, serializer, data, Position, Renderable, Player, Viewshed, Monster, 
             Name, BlocksTile, CombatStats, SufferDamage, WantsToMelee, Item, Paralyze, Ranged, InflictsDamage, 
             AreaOfEffect, Paralyze, ProvidesHealing, InBackpack, WantsToPickupItem, WantsToUseItem,
-			DropItem, SerializationHelper);
+			DropItem, SerializationHelper, Equippable);
     }
 
     // Clean up
@@ -80,7 +80,7 @@ pub fn load_game(ecs: &mut World) {
 		deserialize_individually!(ecs, de, d, Position, Renderable, Player, Viewshed, Monster,
             Name, BlocksTile, CombatStats, SufferDamage, WantsToMelee, Item, Consumable, Ranged, InflictsDamage, 
             AreaOfEffect, Paralyze, ProvidesHealing, InBackpack, WantsToPickupItem, WantsToUseItem,
-            DropItem, SerializationHelper
+            DropItem, SerializationHelper, Equippable
         );
     }
 
