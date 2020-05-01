@@ -1,6 +1,6 @@
 use super::{
-    CombatStats, InBackpack, MainMenuState, Name, Player, Renderable, RunState, TILESIZE,
-    WINDOWSIZE_HEIGHT, WINDOWSIZE_WIDTH,
+    try_drop_item, try_use_item, CombatStats, InBackpack, MainMenuState, Name, Player, Renderable,
+    RunState, TILESIZE, WINDOWSIZE_HEIGHT, WINDOWSIZE_WIDTH,
 };
 
 use ggez::graphics;
@@ -96,22 +96,26 @@ impl ImGuiWrapper {
         self.imgui.io_mut().delta_time = delta_s;
     }
 
-    const INVENTORY_WINDOW_WIDTH_SIZE: f32 = (TILESIZE * 12) as f32;
+    const INVENTORY_WINDOW_WIDTH_SIZE: f32 = (TILESIZE * 24) as f32;
     const INVENTORY_WINDOW_HEIGHT_SIZE: f32 = (TILESIZE * 8) as f32;
     const STATES_WINDOW_WIDTH_SIZE: f32 = (TILESIZE * 8) as f32;
     const STATES_WINDOW_HEIGHT_SIZE: f32 = (TILESIZE * WINDOWSIZE_HEIGHT) as f32;
 
-    pub fn render(&mut self, ctx: &mut Context, ecs: &World, hidpi_factor: f32) {
+    pub fn render(&mut self, ctx: &mut Context, ecs: &mut World, hidpi_factor: f32) {
         self.initialize_for_draw(ctx, hidpi_factor);
-        let mut runstate = ecs.fetch_mut::<RunState>();
         let ui = self.imgui.frame();
         let has_save;
         {
             has_save = self.has_save.clone();
         }
-        let mut not_title = true;
+        let mut newrunstate;
         {
-            match *runstate {
+            newrunstate = *ecs.fetch_mut::<RunState>();
+        }
+        let mut not_title = true;
+        let mut push_any_inventory_button: Option<i32> = None;
+        {
+            match newrunstate {
                 RunState::MainMenu { state: _ } => {
                     // -------------------------------------
                     // main window
@@ -129,14 +133,14 @@ impl ImGuiWrapper {
                             ui.text(im_str!("ようこそ、Sushyeの世界へ！"));
                             ui.separator();
                             if ui.small_button(im_str!("Start")) {
-                                *runstate = RunState::MainMenu {
+                                newrunstate = RunState::MainMenu {
                                     state: MainMenuState::NewGame,
                                 };
                             }
                             if has_save {
                                 if ui.small_button(im_str!("Load Game")) {
                                     if Path::new("./savegame.json").exists() {
-                                        *runstate = RunState::MainMenu {
+                                        newrunstate = RunState::MainMenu {
                                             state: MainMenuState::LoadGame,
                                         };
                                     }
@@ -144,7 +148,7 @@ impl ImGuiWrapper {
                             }
 
                             if ui.small_button(im_str!("Quit")) {
-                                *runstate = RunState::MainMenu {
+                                newrunstate = RunState::MainMenu {
                                     state: MainMenuState::Quit,
                                 };
                             }
@@ -183,14 +187,15 @@ impl ImGuiWrapper {
                                 .filter(|item| item.0.owner == *player_entity)
                             {
                                 let key_char = ((97 + j) as u8) as char;
-                                ui.text(format!("({}) - {}", key_char, name.name.to_string()));
-                                j += 0;
+                                let button_text = im_str!("{}", key_char);
+                                if ui.small_button(&button_text) {
+                                    push_any_inventory_button = Some(j);
+                                }
+                                ui.same_line(0.0);
+                                ui.text(format!("- {}", name.name.to_string()));
+                                j += 1;
                             }
                         });
-                } else {
-                    if *runstate == RunState::ShowInventory || *runstate == RunState::ShowDropItem {
-                        *runstate = RunState::AwaitingInput;
-                    }
                 }
                 // ---------------------------------------
                 // Player States Window
@@ -237,6 +242,31 @@ impl ImGuiWrapper {
                 }
             }
         }
+        match push_any_inventory_button {
+            None => {}
+            Some(j) => match newrunstate {
+                RunState::ShowInventory => {
+                    newrunstate = try_use_item(ecs, j, &mut self.inventory_window_show);
+                }
+                RunState::ShowDropItem => {
+                    newrunstate = try_drop_item(ecs, j, &mut self.inventory_window_show);
+                }
+                _ => {}
+            },
+        }
+        if !self.inventory_window_show
+            && (newrunstate == RunState::ShowDropItem || newrunstate == RunState::ShowInventory)
+        {
+            newrunstate = RunState::AwaitingInput;
+        }
+
+        {
+            let mut runstate = ecs.fetch_mut::<RunState>();
+            *runstate = newrunstate;
+        }
+
+        //
+
         // Render
         let (factory, _, encoder, _, render_target) = graphics::gfx_objects(ctx);
         let draw_data = ui.render();

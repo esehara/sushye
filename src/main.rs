@@ -558,11 +558,10 @@ impl State {
     }
 
     fn draw_title(&mut self, ctx: &mut Context) {
-        self.imgui.render(ctx, &self.ecs, self.hidpi_factor);
+        self.imgui.render(ctx, &mut self.ecs, self.hidpi_factor);
     }
 
     fn draw_maingame(&mut self, ctx: &mut Context, runstatus: RunState) {
-        let map = self.ecs.fetch::<Map>();
         self.draw_map(ctx);
 
         if let RunState::ShowTargeting { range, item } = runstatus {
@@ -580,75 +579,80 @@ impl State {
                 ),
             }
         }
+        {
+            // --------------------
+            // draw any objects
+            // --------------------
+            let players = self.ecs.read_storage::<Player>();
+            let renderables = self.ecs.read_storage::<Renderable>();
+            let positions = self.ecs.read_storage::<Position>();
+            let map = self.ecs.fetch::<Map>();
 
-        let players = self.ecs.read_storage::<Player>();
-        let renderables = self.ecs.read_storage::<Renderable>();
-        let positions = self.ecs.read_storage::<Position>();
-
-        let mut data = (&positions, &renderables).join().collect::<Vec<_>>();
-        data.sort_by(|&a, &b| a.1.render_layer.cmp(&b.1.render_layer));
-        for (_player, player_pos) in (&players, &positions).join() {
-            for (pos, render) in data.iter() {
-                if pos.x < player_pos.to_left()
-                    || pos.y < player_pos.to_top()
-                    || pos.x > player_pos.to_right()
-                    || pos.y > player_pos.to_buttom()
-                {
-                    continue;
-                }
-
-                let idx = map.xy_idx(pos.x, pos.y);
-                let draw_position = Position {
-                    x: pos.x - (player_pos.to_left() + 1),
-                    y: pos.y - (player_pos.to_top() + 1),
-                }
-                .map_to_world();
-
-                if map.visible_tiles[idx] {
-                    if ui_helper::p_to_map(self.mouse_x) + player_pos.to_left() >= 0
-                        && ui_helper::p_to_map(self.mouse_y) + player_pos.to_top() >= 0
+            let mut data = (&positions, &renderables).join().collect::<Vec<_>>();
+            data.sort_by(|&a, &b| a.1.render_layer.cmp(&b.1.render_layer));
+            for (_player, player_pos) in (&players, &positions).join() {
+                for (pos, render) in data.iter() {
+                    if pos.x < player_pos.to_left()
+                        || pos.y < player_pos.to_top()
+                        || pos.x > player_pos.to_right()
+                        || pos.y > player_pos.to_buttom()
                     {
-                        if idx == map.xy_idx_from_mouse(self.mouse_x, self.mouse_y, *player_pos) {
-                            ui_helper::draw_object_focus_rect(
+                        continue;
+                    }
+
+                    let idx = map.xy_idx(pos.x, pos.y);
+                    let draw_position = Position {
+                        x: pos.x - (player_pos.to_left() + 1),
+                        y: pos.y - (player_pos.to_top() + 1),
+                    }
+                    .map_to_world();
+
+                    if map.visible_tiles[idx] {
+                        if ui_helper::p_to_map(self.mouse_x) + player_pos.to_left() >= 0
+                            && ui_helper::p_to_map(self.mouse_y) + player_pos.to_top() >= 0
+                        {
+                            if idx == map.xy_idx_from_mouse(self.mouse_x, self.mouse_y, *player_pos)
+                            {
+                                ui_helper::draw_object_focus_rect(
+                                    ctx,
+                                    &self.ecs,
+                                    self.mouse_x,
+                                    self.mouse_y,
+                                    *pos,
+                                );
+                                ui_helper::draw_tooltip_with_mouse_motion(
+                                    ctx,
+                                    &self.ecs,
+                                    self.mouse_x,
+                                    self.mouse_y,
+                                    self.font,
+                                );
+                            }
+                        }
+                        if self.render_mode == RenderMode::Tile {
+                            graphics::draw(
                                 ctx,
-                                &self.ecs,
-                                self.mouse_x,
-                                self.mouse_y,
-                                *pos,
-                            );
-                            ui_helper::draw_tooltip_with_mouse_motion(
+                                self.images.get(&render.image).unwrap(),
+                                graphics::DrawParam::new().dest(draw_position),
+                            )
+                            .unwrap();
+                        } else {
+                            ui_helper::draw_tile_text(
                                 ctx,
-                                &self.ecs,
-                                self.mouse_x,
-                                self.mouse_y,
+                                self.enum_to_unicode(&render),
+                                pos.x - (player_pos.to_left() + 1),
+                                pos.y - (player_pos.to_top() + 1),
                                 self.font,
                             );
                         }
                     }
-                    if self.render_mode == RenderMode::Tile {
-                        graphics::draw(
-                            ctx,
-                            self.images.get(&render.image).unwrap(),
-                            graphics::DrawParam::new().dest(draw_position),
-                        )
-                        .unwrap();
-                    } else {
-                        ui_helper::draw_tile_text(
-                            ctx,
-                            self.enum_to_unicode(&render),
-                            pos.x - (player_pos.to_left() + 1),
-                            pos.y - (player_pos.to_top() + 1),
-                            self.font,
-                        );
-                    }
                 }
             }
         }
-
         ui_helper::draw_mouse_pos(ctx, self.mouse_x, self.mouse_y);
         // UI
         ui_helper::draw_message_window(ctx, &self.ecs, self.font);
-        self.imgui.render(ctx, &self.ecs, self.hidpi_factor);
+        self.imgui.render(ctx, &mut self.ecs, self.hidpi_factor);
     }
 }
 
@@ -873,6 +877,7 @@ impl EventHandler for State {
             let mut runwriter = self.ecs.write_resource::<RunState>();
             *runwriter = newrunstate;
         }
+
         Ok(())
     }
 
